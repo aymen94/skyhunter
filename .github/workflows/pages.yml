@@ -37,8 +37,6 @@ jobs:
 
       - name: Build site
         run: npm run build
-        env:
-          VITE_BASE_PATH: ${{ format('{0}/', steps.pages.outputs.base_path) }}
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4
