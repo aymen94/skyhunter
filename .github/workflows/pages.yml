@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pages: read
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -24,9 +25,6 @@ jobs:
       - name: Configure GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
-        with:
-          token: ${{ secrets.PAGES_TOKEN }}
-          enablement: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
