@@ -1,115 +1,177 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A WAMR3D powered drone combat flight simulator." />
-    <title>SKYHUNTER</title>
-    <meta name="keywords" content="SKYHUNTER, drone, combat, flight simulator, WAMR3D" />
-    <meta name="author" content="WAMR3D" />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#080d17" />
-    <link rel="icon" type="image/png" sizes="16x16" href="skyhunter/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="skyhunter/favicon-32x32.png" />
-    <link rel="icon" href="skyhunter/favicon.ico" />
-    <link rel="apple-touch-icon" href="skyhunter/apple-touch-icon.png" />
-    <link rel="manifest" href="skyhunter/site.webmanifest" />
-  </head>
-  <body>
-    <div id="app">
-      <div id="scene"></div>
-      <div class="vignette"></div>
-      <div class="signal-noise" aria-hidden="true"></div>
-      <header class="topbar">
-        <a class="brand" href="#" aria-label="Skyhunter"><img class="brand-mark" src="skyhunter/logo.png" alt="" /><span>SKY<span class="brand-slash">//</span>HUNTER</span></a>
-        <div class="mission"><span class="live-dot"></span> FIELD SIMULATOR <span class="mission-divider">/</span> <span id="missionLabel">OUTPOST KESTREL</span></div>
-        <button class="sound-button" id="soundToggle" aria-label="Toggle sound"><span id="soundIcon">◖</span> <span id="soundText">SOUND ON</span></button>
-      </header>
 
-      <section class="deployment-screen" id="deploymentScreen" aria-labelledby="deployTitle">
-        <div class="deploy-left">
-          <h1 id="deployTitle">CHOOSE YOUR<br /><span>DRONE</span></h1>
-          <p class="deploy-copy" id="hangarMissionCopy">Select an airframe for the mission. Identify, approach, and neutralize all five hostile assets.</p>
-          <div class="deployment-objective"><span class="objective-icon">⌖</span><div><span class="objective-label">MISSION OBJECTIVE</span><strong id="hangarMissionObjective">DISABLE ALL HOSTILE ASSETS</strong></div></div>
-          <div class="deployment-readiness"><span class="live-dot"></span> <span id="hangarReadiness">AIRSPACE CLEAR</span> <span class="mission-divider">/</span> READY TO DEPLOY</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A WAMR3D powered drone combat flight simulator." />
+  <title>SKYHUNTER</title>
+  <meta name="keywords" content="SKYHUNTER, drone, combat, flight simulator, WAMR3D" />
+  <meta name="author" content="WAMR3D" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#080d17" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+</head>
+
+<body>
+  <div id="app">
+    <div id="scene"></div>
+    <div class="vignette"></div>
+    <div class="signal-noise" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Skyhunter"><img class="brand-mark" src="/logo.png"
+          alt="" /><span>SKY<span class="brand-slash">//</span>HUNTER</span></a>
+      <div class="mission"><span class="live-dot"></span> FIELD SIMULATOR <span class="mission-divider">/</span> <span
+          id="missionLabel">OUTPOST KESTREL</span></div>
+      <button class="sound-button" id="soundToggle" aria-label="Toggle sound"><span id="soundIcon">◖</span> <span
+          id="soundText">SOUND ON</span></button>
+    </header>
+
+    <section class="deployment-screen" id="deploymentScreen" aria-labelledby="deployTitle">
+      <div class="deploy-left">
+        <h1 id="deployTitle">CHOOSE YOUR<br /><span>DRONE</span></h1>
+        <p class="deploy-copy" id="hangarMissionCopy">Select an airframe for the mission. Identify, approach, and
+          neutralize all five hostile assets.</p>
+        <div class="deployment-objective"><span class="objective-icon">⌖</span>
+          <div><span class="objective-label">MISSION OBJECTIVE</span><strong id="hangarMissionObjective">DISABLE ALL
+              HOSTILE ASSETS</strong></div>
         </div>
-        <div class="deploy-right">
-          <div class="mission-picker" role="group" aria-label="Select a mission">
-            <button class="mission-option selected" data-mission="outpost" aria-pressed="true">
-              <span class="mission-number">01</span><span><strong>OUTPOST KESTREL</strong><small>Mixed ground contacts · marked charge pads</small></span><span class="mission-arrow">↗</span>
-            </button>
-            <button class="mission-option" data-mission="relay" aria-pressed="false">
-              <span class="mission-number">02</span><span><strong>RELAY DEFENSE</strong><small>Intercept inbound drones · protect the relay</small></span><span class="mission-arrow">↗</span>
-            </button>
-            <button class="mission-option" data-mission="harbor" aria-pressed="false">
-              <span class="mission-number">03</span><span><strong>HARBOR WATCH</strong><small>Industrial dock patrol · mobile contacts</small></span><span class="mission-arrow">↗</span>
-            </button>
-            <button class="mission-option" data-mission="highlands" aria-pressed="false">
-              <span class="mission-number">04</span><span><strong>FROSTLINE PASS</strong><small>Mountain route · limited visibility</small></span><span class="mission-arrow">↗</span>
-            </button>
-          </div>
-          <div class="selection-heading"><div><span class="eyebrow">MISSION AIRFRAMES</span><h2>CHOOSE YOUR PLATFORM</h2></div><span class="frame-count">04 <i>/</i> 04</span></div>
-          <div class="drone-cards" role="group" aria-label="Select a drone">
-            <button class="drone-card selected" data-drone="striker" aria-pressed="true">
-              <span class="card-top"><span class="card-index">01</span><span class="availability"><i></i> READY</span></span>
-              <span class="drone-illustration striker-art"><i></i><b></b><em></em></span>
-              <span class="card-name">KITE <small>STRIKER</small></span>
-              <span class="card-description">Fast response quad with a forward pulse cannon.</span>
-              <span class="weapon-tag"><span>↗</span> SINGLE-SHOT RIFLE <span class="tag-count">∞</span></span>
-              <span class="card-stats"><span>SPEED <i><b style="width:85%"></b></i></span><span>PAYLOAD <i><b style="width:55%"></b></i></span></span>
-            </button>
-            <button class="drone-card" data-drone="bomber" aria-pressed="false">
-              <span class="card-top"><span class="card-index">02</span><span class="availability"><i></i> READY</span></span>
-              <span class="drone-illustration bomber-art"><i></i><b></b><em></em></span>
-              <span class="card-name">MANTA <small>BOMBER</small></span>
-              <span class="card-description">Heavy lift platform. Line up overhead and release.</span>
-              <span class="weapon-tag"><span>⌄</span> GRAVITY BOMBS <span class="tag-count">03</span></span>
-              <span class="card-stats"><span>SPEED <i><b style="width:48%"></b></i></span><span>PAYLOAD <i><b style="width:96%"></b></i></span></span>
-            </button>
-            <button class="drone-card" data-drone="fiber" aria-pressed="false">
-              <span class="card-top"><span class="card-index">03</span><span class="availability"><i></i> READY</span></span>
-              <span class="drone-illustration fiber-art"><i></i><b></b><em></em></span>
-              <span class="card-name">SILK <small>FPV</small></span>
-              <span class="card-description">Fiber-guided micro drone with a steerable payload.</span>
-              <span class="weapon-tag"><span>⌁</span> FIBER-GUIDED <span class="tag-count">02</span></span>
-              <span class="card-stats"><span>SPEED <i><b style="width:96%"></b></i></span><span>PAYLOAD <i><b style="width:42%"></b></i></span></span>
-            </button>
-            <button class="drone-card" data-drone="kamikaze" aria-pressed="false">
-              <span class="card-top"><span class="card-index">04</span><span class="availability"><i></i> READY</span></span>
-              <span class="drone-illustration kamikaze-art"><i></i><b></b><em></em></span>
-              <span class="card-name">RAZOR <small>KAMIKAZE</small></span>
-              <span class="card-description">High-speed impact frame. Crash into a target to destroy it.</span>
-              <span class="weapon-tag"><span>✳</span> IMPACT CHARGE <span class="tag-count">∞</span></span>
-              <span class="card-stats"><span>SPEED <i><b style="width:92%"></b></i></span><span>PAYLOAD <i><b style="width:100%"></b></i></span></span>
-            </button>
-          </div>
-          <div class="deploy-footer"><p><span class="status-square"></span><span id="selectedLoadout">KITE STRIKER <i>—</i> SINGLE SHOT</span></p><button class="deploy-button" id="deployButton">BEGIN MISSION <span>↗</span></button></div>
+        <div class="deployment-readiness"><span class="live-dot"></span> <span id="hangarReadiness">AIRSPACE
+            CLEAR</span> <span class="mission-divider">/</span> READY TO DEPLOY</div>
+      </div>
+      <div class="deploy-right">
+        <div class="mission-picker" role="group" aria-label="Select a mission">
+          <button class="mission-option selected" data-mission="outpost" aria-pressed="true">
+            <span class="mission-number">01</span><span><strong>OUTPOST KESTREL</strong><small>Mixed ground contacts ·
+                marked charge pads</small></span><span class="mission-arrow">↗</span>
+          </button>
+          <button class="mission-option" data-mission="relay" aria-pressed="false">
+            <span class="mission-number">02</span><span><strong>RELAY DEFENSE</strong><small>Intercept inbound drones ·
+                protect the relay</small></span><span class="mission-arrow">↗</span>
+          </button>
+          <button class="mission-option" data-mission="harbor" aria-pressed="false">
+            <span class="mission-number">03</span><span><strong>HARBOR WATCH</strong><small>Industrial dock patrol ·
+                mobile contacts</small></span><span class="mission-arrow">↗</span>
+          </button>
+          <button class="mission-option" data-mission="highlands" aria-pressed="false">
+            <span class="mission-number">04</span><span><strong>FROSTLINE PASS</strong><small>Mountain route · limited
+                visibility</small></span><span class="mission-arrow">↗</span>
+          </button>
         </div>
-        <div class="deploy-bottom"><span>WAMR3D FIELD SIMULATION</span><span>FLIGHT CONTROL SYSTEM <i>v.02.7</i></span></div>
+        <div class="selection-heading">
+          <div><span class="eyebrow">MISSION AIRFRAMES</span>
+            <h2>CHOOSE YOUR PLATFORM</h2>
+          </div><span class="frame-count">04 <i>/</i> 04</span>
+        </div>
+        <div class="drone-cards" role="group" aria-label="Select a drone">
+          <button class="drone-card selected" data-drone="striker" aria-pressed="true">
+            <span class="card-top"><span class="card-index">01</span><span class="availability"><i></i>
+                READY</span></span>
+            <span class="drone-illustration striker-art"><i></i><b></b><em></em></span>
+            <span class="card-name">KITE <small>STRIKER</small></span>
+            <span class="card-description">Fast response quad with a forward pulse cannon.</span>
+            <span class="weapon-tag"><span>↗</span> SINGLE-SHOT RIFLE <span class="tag-count">∞</span></span>
+            <span class="card-stats"><span>SPEED <i><b style="width:85%"></b></i></span><span>PAYLOAD <i><b
+                    style="width:55%"></b></i></span></span>
+          </button>
+          <button class="drone-card" data-drone="bomber" aria-pressed="false">
+            <span class="card-top"><span class="card-index">02</span><span class="availability"><i></i>
+                READY</span></span>
+            <span class="drone-illustration bomber-art"><i></i><b></b><em></em></span>
+            <span class="card-name">MANTA <small>BOMBER</small></span>
+            <span class="card-description">Heavy lift platform. Line up overhead and release.</span>
+            <span class="weapon-tag"><span>⌄</span> GRAVITY BOMBS <span class="tag-count">03</span></span>
+            <span class="card-stats"><span>SPEED <i><b style="width:48%"></b></i></span><span>PAYLOAD <i><b
+                    style="width:96%"></b></i></span></span>
+          </button>
+          <button class="drone-card" data-drone="fiber" aria-pressed="false">
+            <span class="card-top"><span class="card-index">03</span><span class="availability"><i></i>
+                READY</span></span>
+            <span class="drone-illustration fiber-art"><i></i><b></b><em></em></span>
+            <span class="card-name">SILK <small>FPV</small></span>
+            <span class="card-description">Fiber-guided micro drone with a steerable payload.</span>
+            <span class="weapon-tag"><span>⌁</span> FIBER-GUIDED <span class="tag-count">02</span></span>
+            <span class="card-stats"><span>SPEED <i><b style="width:96%"></b></i></span><span>PAYLOAD <i><b
+                    style="width:42%"></b></i></span></span>
+          </button>
+          <button class="drone-card" data-drone="kamikaze" aria-pressed="false">
+            <span class="card-top"><span class="card-index">04</span><span class="availability"><i></i>
+                READY</span></span>
+            <span class="drone-illustration kamikaze-art"><i></i><b></b><em></em></span>
+            <span class="card-name">RAZOR <small>KAMIKAZE</small></span>
+            <span class="card-description">High-speed impact frame. Crash into a target to destroy it.</span>
+            <span class="weapon-tag"><span>✳</span> IMPACT CHARGE <span class="tag-count">∞</span></span>
+            <span class="card-stats"><span>SPEED <i><b style="width:92%"></b></i></span><span>PAYLOAD <i><b
+                    style="width:100%"></b></i></span></span>
+          </button>
+        </div>
+        <div class="deploy-footer">
+          <p><span class="status-square"></span><span id="selectedLoadout">KITE STRIKER <i>—</i> SINGLE SHOT</span></p>
+          <button class="deploy-button" id="deployButton">BEGIN MISSION <span>↗</span></button>
+        </div>
+      </div>
+      <div class="deploy-bottom"><span>WAMR3D FIELD SIMULATION</span><span>FLIGHT CONTROL SYSTEM <i>v.02.7</i></span>
+      </div>
+    </section>
+
+    <main class="game-hud" aria-label="Mission HUD">
+      <section class="mission-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span> HOSTILE ASSET RESPONSE</p>
+        <h1>SECTOR<br /><span>INTERCEPT</span></h1>
+        <p class="subtitle">Neutralize hostile installations.<br />Watch for mobile armor.</p>
+        <div class="objective"><span class="objective-icon">⌖</span>
+          <div><span class="objective-label">PRIMARY OBJECTIVE</span><strong>DISABLE HOSTILE ASSETS</strong></div>
+        </div>
       </section>
+      <section class="hud-top" aria-label="Mission status">
+        <div class="hud-card"><span class="hud-label">HOSTILES</span>
+          <div class="threat-value"><span class="threat-dot"></span><strong id="threatCount">05</strong><span
+              class="threat-of" id="threatTotal">/ 05</span></div>
+        </div>
+        <div class="hud-card resource-card hidden" id="resourceCard"><span class="hud-label">RELAY INTEGRITY</span>
+          <div class="resource-bar"><i id="resourceHealthBar"></i></div><strong id="resourceHealthText">100%</strong>
+        </div>
+        <div class="hud-card score-card"><span class="hud-label">SCORE</span><strong id="score">000000</strong></div>
+        <div class="hud-card"><span class="hud-label">FLIGHT TIME</span><strong id="timer">00:00</strong></div>
+      </section>
+      <section class="target-readout" id="targetReadout"><span class="target-bracket">+</span><span><span
+            class="target-label">TARGET TRACKED</span><strong id="targetName">ANTENNA • 01</strong></span><span
+          class="target-distance" id="targetDistance">120 M</span></section>
+      <section class="drone-status" aria-label="Drone status">
+        <div class="drone-heading"><span class="drone-icon">◈</span>
+          <div><span class="hud-label">AIRFRAME</span><strong id="piloting">KITE <span>STRIKER</span></strong></div>
+        </div>
+        <div class="battery"><span class="hud-label">BATTERY</span>
+          <div class="bar"><i id="healthBar"></i></div>
+          <div class="battery-reading"><span id="healthText">100%</span><small id="batteryHint">LAND ON A PAD TO
+              CHARGE</small></div>
+        </div>
+        <div class="ammo"><span class="hud-label">PAYLOAD</span><strong id="ammoCount">∞</strong></div>
+        <div class="speed"><span class="hud-label">VELOCITY</span><strong><span id="speed">0</span><small>
+              KM/H</small></strong></div>
+      </section>
+      <div class="crosshair" id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+      <div class="center-message" id="centerMessage"><span class="message-symbol">◈</span><strong
+          id="messageTitle">SECTOR CLEARED</strong><span id="messageDetail">ALL HOSTILE ASSETS DISABLED</span><button
+          id="restart">RETURN TO HANGAR <span>↗</span></button></div>
+      <aside class="controls-hint"><span class="hint-title">FLIGHT CONTROLS</span>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>FLIGHT</span></div>
+        <div><kbd>Q</kbd><kbd>E</kbd><span>ALTITUDE</span></div>
+        <div><kbd>←</kbd><kbd>→</kbd><span>YAW</span></div>
+        <div><kbd>SHIFT</kbd><span>AFTERBURNER</span></div>
+        <div><kbd>SPACE</kbd><span id="weaponHint">SINGLE SHOT</span></div>
+      </aside>
+      <div class="bottom-note"><span class="signal-bars" id="signalBars"><i></i><i></i><i></i><i></i></span> LINK
+        <strong id="linkStatus">STABLE</strong> <span class="mission-divider">/</span> WIND <strong
+          id="windSpeed">09</strong> KM/H</div>
+    </main>
+    <div class="toast" id="toast">HOSTILE ASSET DISABLED <span>+1000</span></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
 
-      <main class="game-hud" aria-label="Mission HUD">
-        <section class="mission-copy">
-          <p class="eyebrow"><span class="eyebrow-line"></span> HOSTILE ASSET RESPONSE</p>
-          <h1>SECTOR<br /><span>INTERCEPT</span></h1>
-          <p class="subtitle">Neutralize hostile installations.<br />Watch for mobile armor.</p>
-          <div class="objective"><span class="objective-icon">⌖</span><div><span class="objective-label">PRIMARY OBJECTIVE</span><strong>DISABLE HOSTILE ASSETS</strong></div></div>
-        </section>
-        <section class="hud-top" aria-label="Mission status">
-          <div class="hud-card"><span class="hud-label">HOSTILES</span><div class="threat-value"><span class="threat-dot"></span><strong id="threatCount">05</strong><span class="threat-of" id="threatTotal">/ 05</span></div></div>
-          <div class="hud-card resource-card hidden" id="resourceCard"><span class="hud-label">RELAY INTEGRITY</span><div class="resource-bar"><i id="resourceHealthBar"></i></div><strong id="resourceHealthText">100%</strong></div>
-          <div class="hud-card score-card"><span class="hud-label">SCORE</span><strong id="score">000000</strong></div>
-          <div class="hud-card"><span class="hud-label">FLIGHT TIME</span><strong id="timer">00:00</strong></div>
-        </section>
-        <section class="target-readout" id="targetReadout"><span class="target-bracket">+</span><span><span class="target-label">TARGET TRACKED</span><strong id="targetName">ANTENNA • 01</strong></span><span class="target-distance" id="targetDistance">120 M</span></section>
-        <section class="drone-status" aria-label="Drone status"><div class="drone-heading"><span class="drone-icon">◈</span><div><span class="hud-label">AIRFRAME</span><strong id="piloting">KITE <span>STRIKER</span></strong></div></div><div class="battery"><span class="hud-label">BATTERY</span><div class="bar"><i id="healthBar"></i></div><div class="battery-reading"><span id="healthText">100%</span><small id="batteryHint">LAND ON A PAD TO CHARGE</small></div></div><div class="ammo"><span class="hud-label">PAYLOAD</span><strong id="ammoCount">∞</strong></div><div class="speed"><span class="hud-label">VELOCITY</span><strong><span id="speed">0</span><small> KM/H</small></strong></div></section>
-        <div class="crosshair" id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
-        <div class="center-message" id="centerMessage"><span class="message-symbol">◈</span><strong id="messageTitle">SECTOR CLEARED</strong><span id="messageDetail">ALL HOSTILE ASSETS DISABLED</span><button id="restart">RETURN TO HANGAR <span>↗</span></button></div>
-        <aside class="controls-hint"><span class="hint-title">FLIGHT CONTROLS</span><div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>FLIGHT</span></div><div><kbd>Q</kbd><kbd>E</kbd><span>ALTITUDE</span></div><div><kbd>←</kbd><kbd>→</kbd><span>YAW</span></div><div><kbd>SHIFT</kbd><span>AFTERBURNER</span></div><div><kbd>SPACE</kbd><span id="weaponHint">SINGLE SHOT</span></div></aside>
-        <div class="bottom-note"><span class="signal-bars" id="signalBars"><i></i><i></i><i></i><i></i></span> LINK <strong id="linkStatus">STABLE</strong> <span class="mission-divider">/</span> WIND <strong id="windSpeed">09</strong> KM/H</div>
-      </main>
-      <div class="toast" id="toast">HOSTILE ASSET DISABLED <span>+1000</span></div>
-    </div>
-    <script type="module" src="skyhunter/src/main.js"></script>
-  </body>
 </html>
