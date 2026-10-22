@@ -15,9 +15,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          token: ${{ secrets.PAGES_TOKEN }}
+          enablement: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -30,9 +39,8 @@ jobs:
 
       - name: Build site
         run: npm run build
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        env:
+          VITE_BASE_PATH: ${{ format('{0}/', steps.pages.outputs.base_path) }}
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4
