@@ -1,0 +1,14 @@
+Ground037 by ambientCG (https://ambientcg.com/view?id=Ground037)
+License: CC0 1.0 Universal (https://docs.ambientcg.com/license/)
+Included maps: Color and Roughness, 1K JPG.
+
+Painted Metal 012 by ambientCG (https://ambientcg.com/view?id=PaintedMetal012)
+License: CC0 1.0 Universal (https://docs.ambientcg.com/license/)
+Included maps: Color, Roughness, and OpenGL Normal, 1K JPG.
+
+Solar Panel 002 by ambientCG (https://ambientcg.com/view?id=SolarPanel002)
+License: CC0 1.0 Universal (https://docs.ambientcg.com/license/)
+Included maps: Color, Roughness, and OpenGL Normal, 1K JPG.
+
+Explosion 001 animation tileset by elnineo (https://opengameart.org/content/explosion-tilesets)
+License: CC0. Included as an 8x8 animated sprite sheet.

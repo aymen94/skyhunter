@@ -1,9 +1,19 @@
-export function createTargets(THREE, scene, groundY, material, layout = 'outpost') {
+export function createTargets(THREE, scene, groundY, material, layout = 'outpost', surfaceMaps = null, models = {}) {
   const targets = [];
+  const paintedMaterial = (color, roughness, metalness) => {
+    const result = material(color, roughness, metalness);
+    if (surfaceMaps) {
+      result.map = surfaceMaps.color;
+      result.roughnessMap = surfaceMaps.roughness;
+      result.normalMap = surfaceMaps.normal;
+      result.needsUpdate = true;
+    }
+    return result;
+  };
   const targetMaterials = {
-    steel: material(0x4c5e63, .68, .32),
-    dark: material(0x26383d, .53, .42),
-    antenna: material(0x97a9a5, .58, .35),
+    steel: paintedMaterial(0x526248, .78, .22),
+    dark: material(0x26302e, .68, .22),
+    antenna: paintedMaterial(0x8c9688, .48, .38),
     warning: new THREE.MeshBasicMaterial({ color: 0xff665c }),
     lamp: new THREE.MeshBasicMaterial({ color: 0xffb451 }),
   };
@@ -21,26 +31,26 @@ export function createTargets(THREE, scene, groundY, material, layout = 'outpost
   function makeAntenna(index, position) {
     const root = new THREE.Group();
     root.position.set(position[0], groundY, position[1]);
-    const platform = box(root, [4.1, .38, 3.8], targetMaterials.dark, [0, .2, 0]);
-    const cabin = box(root, [2.8, 1.7, 2.4], targetMaterials.steel, [0, 1.1, 0]);
-    box(root, [1.4, .25, .9], targetMaterials.dark, [0, 2.06, .2]);
-    box(root, [.13, 4.6, .13], targetMaterials.antenna, [0, 4.25, -.45]);
-    box(root, [1.9, .11, .11], targetMaterials.antenna, [0, 5.1, -.45]);
-    const dish = new THREE.Mesh(new THREE.TorusGeometry(.72, .08, 8, 22), targetMaterials.antenna);
-    dish.position.set(.65, 3.8, -.4);
+    const platform = box(root, [3.1, .32, 3.1], targetMaterials.dark, [0, .17, 0]);
+    const cabin = box(root, [2.25, 1.45, 1.95], targetMaterials.steel, [0, .95, 0]);
+    box(root, [1.1, .22, .75], targetMaterials.dark, [0, 1.8, .16]);
+    box(root, [.1, 3.8, .1], targetMaterials.antenna, [0, 3.7, -.38]);
+    box(root, [1.55, .08, .08], targetMaterials.antenna, [0, 4.55, -.38]);
+    const dish = new THREE.Mesh(new THREE.TorusGeometry(.58, .055, 8, 24), targetMaterials.antenna);
+    dish.position.set(.58, 3.45, -.34);
     dish.rotation.y = Math.PI / 2;
     root.add(dish);
     const sweep = new THREE.Group();
-    sweep.position.set(-.72, 4.85, -.45);
+    sweep.position.set(-.62, 4.35, -.38);
     root.add(sweep);
-    box(sweep, [2.1, .08, .08], targetMaterials.antenna, [0, 0, 0]);
-    box(sweep, [.08, .68, .08], targetMaterials.antenna, [0, 0, 0]);
+    box(sweep, [1.6, .07, .07], targetMaterials.antenna, [0, 0, 0]);
+    box(sweep, [.07, .52, .07], targetMaterials.antenna, [0, 0, 0]);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(3.1, .035, 5, 40), new THREE.MeshBasicMaterial({ color: 0xff655c, transparent: true, opacity: .75 }));
     ring.rotation.x = Math.PI / 2;
     ring.position.y = .1;
     root.add(ring);
     const light = new THREE.PointLight(0xff5d53, 1.4, 9);
-    light.position.set(0, 4.5, 0);
+    light.position.set(0, 4.1, 0);
     root.add(light);
     root.userData = { index, kind: 'antenna', label: `ANTENNA • ${String(index + 1).padStart(2, '0')}`, alive: true, radius: 4.5, hitPoint: new THREE.Vector3(0, 2.4, 0), animation: sweep, lamp: light, phase: Math.random() * 6 };
     scene.add(root);
@@ -51,37 +61,75 @@ export function createTargets(THREE, scene, groundY, material, layout = 'outpost
   function makeTank(index, position, patrolWidth) {
     const root = new THREE.Group();
     root.position.set(position[0], groundY, position[1]);
-    const treadMat = material(0x202e31, .91, .12);
-    const wheelMat = material(0x101a1e, .82, .16);
-    box(root, [3.7, .62, 2.3], treadMat, [0, .56, 0]);
-    box(root, [2.8, .77, 1.75], targetMaterials.steel, [0, 1.13, 0]);
-    // Road wheels and animated track rollers on both sides.
     const rollers = [];
-    for (const side of [-1, 1]) {
-      for (let j = 0; j < 4; j++) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(.34, .34, .16, 12), wheelMat);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(side * 1.1, .53, -.78 + j * .52);
-        wheel.castShadow = true;
-        root.add(wheel);
-        rollers.push(wheel);
+    let turret;
+    const tankModels = models.tanks?.length ? models.tanks : models.tank ? [models.tank] : [];
+    if (tankModels.length) {
+      // The Scorpion GLB contains several side-by-side paint variants. Use one
+      // complete livery per target, scaled to the existing battlefield footprint.
+      const tankVisual = tankModels[index % tankModels.length].clone(true);
+      tankVisual.rotation.y = Math.PI;
+      tankVisual.updateMatrixWorld(true);
+      let bounds = new THREE.Box3().setFromObject(tankVisual);
+      const dimensions = bounds.getSize(new THREE.Vector3());
+      const fitScale = 5.2 / Math.max(dimensions.x, dimensions.z, .001);
+      tankVisual.scale.setScalar(fitScale);
+      tankVisual.updateMatrixWorld(true);
+      bounds = new THREE.Box3().setFromObject(tankVisual);
+      const center = bounds.getCenter(new THREE.Vector3());
+      tankVisual.position.set(-center.x, -bounds.min.y, -center.z);
+      tankVisual.traverse((part) => {
+        if (part.isMesh) { part.castShadow = true; part.receiveShadow = true; }
+      });
+      root.add(tankVisual);
+      turret = new THREE.Group();
+      root.add(turret);
+    } else {
+      const treadMat = paintedMaterial(0x45483d, .88, .1);
+      const wheelMat = material(0x101a1e, .82, .16);
+      box(root, [2.65, .66, 3.85], treadMat, [0, .56, 0]);
+      box(root, [2.35, .78, 2.65], targetMaterials.steel, [0, 1.16, .25]);
+      // Road wheels and animated track rollers on both sides.
+      for (const side of [-1, 1]) {
+        for (let j = 0; j < 4; j++) {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(.31, .31, .16, 16), wheelMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(side * 1.31, .53, -1.24 + j * .82);
+          wheel.castShadow = true;
+          root.add(wheel);
+          rollers.push(wheel);
+        }
+        box(root, [.22, .72, 3.65], targetMaterials.dark, [side * 1.31, .57, 0]);
+        box(root, [.12, .07, 3.35], targetMaterials.steel, [side * 1.43, .92, 0]);
       }
-      box(root, [.12, .66, 2.05], targetMaterials.dark, [side * 1.78, .57, 0]);
+      turret = new THREE.Group();
+      turret.position.set(0, 1.58, -.1);
+      root.add(turret);
+      const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(.82, 1.05, .5, 8), targetMaterials.dark);
+      turretBase.castShadow = true;
+      turret.add(turretBase);
+      box(turret, [1.38, .62, 1.58], targetMaterials.steel, [0, .34, 0]);
+      const cannon = new THREE.Mesh(new THREE.CylinderGeometry(.1, .14, 2.15, 12), targetMaterials.dark);
+      cannon.rotation.x = Math.PI / 2;
+      cannon.position.set(0, .5, -1.48);
+      cannon.castShadow = true;
+      turret.add(cannon);
+      const hatch = new THREE.Mesh(new THREE.CylinderGeometry(.26, .26, .12, 10), targetMaterials.antenna);
+      hatch.position.set(.28, .72, .1);
+      turret.add(hatch);
+      for (const side of [-1, 1]) {
+        const lamp = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), targetMaterials.lamp);
+        lamp.position.set(side * .82, .77, -1.42);
+        root.add(lamp);
+      }
+      for (let i = 0; i < 4; i++) box(root, [.08, .28, .04], targetMaterials.dark, [-.3 + i * .2, .9, -1.09]);
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(.025, .035, .55, 8), targetMaterials.antenna);
+      antenna.position.set(-.48, 2.17, .46);
+      root.add(antenna);
     }
-    const turret = new THREE.Group();
-    turret.position.set(0, 1.58, -.1);
-    root.add(turret);
-    const turretBase = new THREE.Mesh(new THREE.CylinderGeometry(.82, 1.05, .5, 8), targetMaterials.dark);
-    turretBase.castShadow = true;
-    turret.add(turretBase);
-    box(turret, [1.2, .58, 1.35], targetMaterials.steel, [0, .34, 0]);
-    box(turret, [.2, .18, 2.2], targetMaterials.dark, [0, .5, -1.45]);
-    const hatch = new THREE.Mesh(new THREE.CylinderGeometry(.26, .26, .12, 10), targetMaterials.antenna);
-    hatch.position.set(.28, .72, .1);
-    turret.add(hatch);
     const warning = new THREE.PointLight(0xff6a53, .8, 5);
     warning.position.set(0, 1.2, .2);
-    turret.add(warning);
+    root.add(warning);
     root.userData = {
       index, kind: 'tank', label: `MOBILE ARMOR • ${String(index + 1).padStart(2, '0')}`,
       alive: true, radius: 2.8, hitPoint: new THREE.Vector3(0, 1.5, 0),
@@ -112,10 +160,12 @@ export function createTargets(THREE, scene, groundY, material, layout = 'outpost
     const radar = new THREE.Group();
     radar.position.set(-1.15, 3.25, .6);
     root.add(radar);
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(.08, .12, .8, 8), targetMaterials.antenna);
-    mast.position.y = .4;
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(.08, .14, 3.6, 10), targetMaterials.antenna);
+    mast.position.y = 1.8;
     radar.add(mast);
-    box(radar, [2.1, .09, .12], targetMaterials.antenna, [0, .82, 0]);
+    box(radar, [1.5, 1.18, .18], targetMaterials.dark, [0, 3.65, 0]);
+    box(radar, [1.34, 1.02, .08], targetMaterials.antenna, [0, 3.65, -.12]);
+    for (let i = 0; i < 5; i++) box(radar, [.035, .94, .045], targetMaterials.dark, [-.52 + i * .26, 3.65, -.2]);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, .035, 5, 40), new THREE.MeshBasicMaterial({ color: 0xff655c, transparent: true, opacity: .75 }));
     ring.rotation.x = Math.PI / 2;
     ring.position.y = .08;
@@ -208,7 +258,7 @@ export function createScenarioEnvironment(THREE, scene, groundY, material, type)
   return environment;
 }
 
-export function createDefenseMission(THREE, scene, groundY, material) {
+export function createDefenseMission(THREE, scene, groundY, material, solarPanelMaps = null) {
   const environment = new THREE.Group();
   const enemies = [];
   const resourcePosition = new THREE.Vector3(0, groundY, -72);
@@ -246,7 +296,13 @@ export function createDefenseMission(THREE, scene, groundY, material) {
   resource.add(resourceLight);
   environment.add(resource);
 
-  const panelMaterial = material(0x344e59, .35, .55);
+  const panelMaterial = material(0xffffff, .42, .58);
+  if (solarPanelMaps) {
+    panelMaterial.map = solarPanelMaps.color;
+    panelMaterial.roughnessMap = solarPanelMaps.roughness;
+    panelMaterial.normalMap = solarPanelMaps.normal;
+    panelMaterial.needsUpdate = true;
+  }
   for (const side of [-1, 1]) {
     for (let row = 0; row < 3; row++) {
       const panel = new THREE.Mesh(new THREE.BoxGeometry(5, .14, 2.4), panelMaterial);

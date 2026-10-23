@@ -19,7 +19,7 @@ Open the local URL printed by Vite. To create and preview a production build, ru
 
 ## Demo features
 
-- Four selectable missions and drone airframes
+- Four selectable missions with the Kamikaze strike drone airframe
 - Keyboard flight controls, afterburner, and airframe specific payloads
 - Hostile targets, mission objectives, score, and flight status HUD
 - Battery use and charging pads
@@ -33,6 +33,5 @@ Open the local URL printed by Vite. To create and preview a production build, ru
 | Q / E | Change altitude |
 | ← / → | Yaw |
 | Shift | Afterburner |
-| Space | Fire or deploy payload |
 
 The app entry point is `src/main.js`; mission environments, drone behavior, and flight systems are organized in the other modules under `src/`.

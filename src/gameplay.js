@@ -1,4 +1,4 @@
-export function createGameplay({ THREE, scene, state, targets, drone, dronePos, velocity, forward, selectedProfile, material, beep, scoreEl, threatEl, toast, message, crosshair, ammoCount, groundY }) {
+export function createGameplay({ THREE, scene, camera, state, targets, drone, dronePos, velocity, forward, selectedProfile, material, beep, explosionTexture, explosionSound, scoreEl, threatEl, toast, message, crosshair, ammoCount, groundY }) {
   function liveTargets() { return targets.filter((target) => target.userData.alive); }
   // All targets are direct children of the scene, so compose their world-space
   // hit point from their local position. This avoids reading a stale WASM matrix
@@ -22,70 +22,6 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
     return candidates[0]?.target ?? liveTargets().sort((a, b) => a.position.distanceTo(dronePos) - b.position.distanceTo(dronePos))[0] ?? null;
   }
 
-  function setFire(on) {
-    if (!state.started || state.gameOver) return;
-    state.firing = on;
-    if (on && state.selected === 'striker') firePulse();
-    else if (on && (state.selected === 'bomber' || state.selected === 'fiber')) launchPayload();
-  }
-
-  function makeProjectile(color, radius = .09) {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 8, 8), new THREE.MeshBasicMaterial({ color }));
-    scene.add(mesh);
-    return mesh;
-  }
-
-  function firePulse() {
-    if (!state.started || state.gameOver || performance.now() - state.shotAt < state.shotCooldown) return;
-    state.shotAt = performance.now();
-    crosshair.classList.add('firing');
-    setTimeout(() => crosshair.classList.remove('firing'), 75);
-    beep(180, .055, 'sawtooth', .014);
-    const origin = droneLocalToWorld(new THREE.Vector3(0, 0, -1.15));
-    const direction = forward.clone().applyQuaternion(drone.quaternion).normalize();
-    const mesh = makeProjectile(0x9affeb, .085);
-    mesh.position.copy(origin);
-    state.bombs.push({ type: 'pulse', mesh, direction, life: 2.3 });
-  }
-
-  function launchPayload() {
-    const profile = selectedProfile();
-    if (state.selected === 'fiber' && state.activeFiber) return;
-    if (profile.ammo <= 0) { beep(110, .12, 'square', .025); return; }
-    const target = acquireTarget();
-    if (!target) return;
-    profile.ammo--;
-    ammoCount.textContent = String(profile.ammo).padStart(2, '0');
-    const origin = droneLocalToWorld(new THREE.Vector3(0, -.25, -.9));
-    crosshair.classList.add('firing');
-    setTimeout(() => crosshair.classList.remove('firing'), 120);
-
-    if (state.selected === 'bomber') {
-      const bomb = new THREE.Group();
-      const shell = new THREE.Mesh(new THREE.CylinderGeometry(.16, .22, .82, 8), material(0xd3a44b, .43, .37));
-      shell.rotation.x = Math.PI / 2;
-      bomb.add(shell);
-      const noseCone = new THREE.Mesh(new THREE.ConeGeometry(.18, .32, 8), material(0x665536, .52, .3));
-      noseCone.rotation.x = -Math.PI / 2;
-      noseCone.position.z = -.54;
-      bomb.add(noseCone);
-      bomb.position.copy(origin);
-      scene.add(bomb);
-      state.bombs.push({ type: 'bomb', mesh: bomb, velocity: new THREE.Vector3(0, -1.2, 0), life: 6 });
-      beep(230, .13, 'sawtooth', .025);
-    } else {
-      const mesh = makeProjectile(0xffd37a, .18);
-      mesh.position.copy(origin);
-      const geometry = new THREE.BufferGeometry().setFromPoints([origin, origin]);
-      const cable = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xe5bd75, transparent: true, opacity: .65 }));
-      scene.add(cable);
-      const fiber = { type: 'fiber', mesh, cable, target, life: 6, direction: forward.clone().applyQuaternion(drone.quaternion).normalize() };
-      state.bombs.push(fiber);
-      state.activeFiber = fiber;
-      beep(310, .12, 'triangle', .024);
-    }
-  }
-
   function burst(at, color = 0x43ffe0, count = 18) {
     for (let i = 0; i < count; i++) {
       const particle = new THREE.Mesh(new THREE.SphereGeometry(.045 + Math.random() * .07, 5, 5), new THREE.MeshBasicMaterial({ color, transparent: true }));
@@ -95,12 +31,54 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
     }
   }
 
-  function destroyTarget(target, bonus = 1000) {
+  function playExplosionSound() {
+    if (!state.sound || !explosionSound) return;
+    explosionSound.currentTime = 0;
+    explosionSound.volume = .48;
+    explosionSound.play().catch(() => {});
+  }
+
+  function explosionFlash(at, playSound = true) {
+    if (playSound) playExplosionSound();
+    if (explosionTexture) {
+      const texture = new THREE.Texture(explosionTexture.image);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(1 / 8, 1 / 8);
+      texture.colorSpace = explosionTexture.colorSpace;
+      texture.needsUpdate = true;
+      const material = new THREE.MeshBasicMaterial({
+        map: texture, transparent: true, alphaTest: .025, depthWrite: false,
+        side: THREE.DoubleSide, toneMapped: false,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+      mesh.position.copy(at);
+      mesh.scale.setScalar(6.7);
+      mesh.quaternion.copy(camera.quaternion);
+      scene.add(mesh);
+      state.particles.push({ mesh, texture, material, velocity: new THREE.Vector3(), life: 1.28, maxLife: 1.28, explosionSprite: true });
+    }
+    for (const [color, startSize, endSize, lifetime] of [
+      [0xff6a32, 1.1, 5.1, .48],
+      [0xffd27a, .42, 1.18, .24],
+    ]) {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 12, 10),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .85, depthWrite: false }),
+      );
+      mesh.position.copy(at);
+      scene.add(mesh);
+      state.particles.push({ mesh, velocity: new THREE.Vector3(), life: lifetime, maxLife: lifetime, explosion: true, startSize, endSize });
+    }
+  }
+
+  function destroyTarget(target, bonus = 1000, showExplosion = true, playSound = true) {
     if (!target?.userData.alive) return;
     target.userData.alive = false;
     target.visible = false;
     const point = targetPoint(target);
     burst(point, 0xff765e, 30);
+    if (showExplosion) explosionFlash(point, playSound);
     state.score += bonus;
     scoreEl.textContent = String(state.score).padStart(6, '0');
     threatEl.textContent = String(liveTargets().length).padStart(2, '0');
@@ -118,28 +96,33 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
     }
   }
 
-  function checkKamikazeImpact() {
-    if (!state.started || state.gameOver || state.respawning || state.selected !== 'kamikaze') return;
-    // Collision is based on the target's whole footprint, so a slow or low-speed
-    // touch still detonates and the drone does not need to hit one exact point.
-    const target = liveTargets().find((item) => dronePos.distanceTo(targetPoint(item)) <= item.userData.radius + 1.1);
-    if (!target) return;
+  function checkDroneImpact() {
+    if (!state.started || state.gameOver || state.respawning) return;
+    const groundImpact = dronePos.y <= groundY + .48;
+    const contactRadius = Math.max(drone.scale.x, drone.scale.z) * 2.1;
+    const target = groundImpact ? null : liveTargets().find((item) =>
+      dronePos.distanceTo(targetPoint(item)) <= item.userData.radius + contactRadius,
+    );
+    if (!groundImpact && !target) return;
     const impactPoint = dronePos.clone();
     burst(impactPoint, 0xff5b3f, 42);
     burst(impactPoint, 0xffc36b, 22);
-    destroyTarget(target, 1600);
+    if (target) destroyTarget(target, selectedProfile().name === 'KAMIKAZE' ? 1600 : 1000);
+    else explosionFlash(impactPoint);
     state.respawning = true;
     state.respawnAt = performance.now() + 1300;
     state.firing = false;
     drone.visible = false;
     velocity.set(0, 0, 0);
-    toast.innerHTML = `${target.userData.label} DESTROYED — FRAME LOST <span>+1600</span>`;
+    toast.innerHTML = target
+      ? `${target.userData.label} HIT - AIRFRAME LOST <span>+${selectedProfile().name === 'KAMIKAZE' ? 1600 : 1000}</span>`
+      : 'GROUND IMPACT - AIRFRAME LOST <span>REBUILDING</span>';
     toast.classList.add('show');
     state.toastAt = performance.now();
     beep(95, .3, 'sawtooth', .06);
   }
 
-  function updateKamikazeRespawn() {
+  function updateDroneRespawn() {
     if (!state.respawning || performance.now() < state.respawnAt) return;
     state.respawning = false;
     if (state.gameOver || liveTargets().length === 0) return;
@@ -148,17 +131,18 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
     drone.position.copy(dronePos);
     drone.rotation.set(0, 0, 0);
     drone.visible = true;
-    toast.innerHTML = 'RAZOR REBUILT <span>READY</span>';
+    toast.innerHTML = 'AIRFRAME RESET <span>READY</span>';
     toast.classList.add('show');
     state.toastAt = performance.now();
     beep(520, .12, 'triangle', .025);
   }
 
   function bombBlast(position, radius = 6) {
+    explosionFlash(position);
     burst(position, 0xffb65e, 34);
     for (const target of liveTargets()) {
       const point = targetPoint(target);
-      if (point.distanceTo(position) < radius + target.userData.radius * .25) destroyTarget(target, 1200);
+      if (point.distanceTo(position) < radius + target.userData.radius * .25) destroyTarget(target, 1200, false, false);
     }
     beep(95, .3, 'sawtooth', .06);
   }
@@ -186,29 +170,24 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
           state.bombs.splice(i, 1);
           bombBlast(blastPosition, 7.3);
         }
-      } else if (projectile.type === 'fiber') {
-        if (!projectile.target.userData.alive) projectile.target = acquireTarget();
+      } else if (projectile.type === 'missile') {
+        if (!projectile.target?.userData.alive) projectile.target = acquireTarget();
         if (!projectile.target) projectile.life = 0;
         if (projectile.life > 0) {
-          const toTarget = targetPoint(projectile.target).sub(projectile.mesh.position).normalize();
-          projectile.direction.lerp(toTarget, 1 - Math.exp(-dt * 3.4)).normalize();
-          projectile.mesh.position.addScaledVector(projectile.direction, 47 * dt);
-          const positions = projectile.cable.geometry.attributes.position.array;
-          const start = dronePos;
-          const end = projectile.mesh.position;
-          positions[0] = start.x; positions[1] = start.y; positions[2] = start.z;
-          positions[3] = end.x; positions[4] = end.y; positions[5] = end.z;
-          projectile.cable.geometry.attributes.position.needsUpdate = true;
-          projectile.cable.geometry.computeBoundingSphere();
-          if (projectile.mesh.position.distanceTo(targetPoint(projectile.target)) < projectile.target.userData.radius * .5) {
+          const targetPosition = targetPoint(projectile.target);
+          const toTarget = targetPosition.sub(projectile.mesh.position).normalize();
+          projectile.direction.lerp(toTarget, 1 - Math.exp(-dt * 5.2)).normalize();
+          projectile.speed = Math.min(92, projectile.speed + 38 * dt);
+          projectile.mesh.position.addScaledVector(projectile.direction, projectile.speed * dt);
+          projectile.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), projectile.direction);
+          if (projectile.mesh.position.distanceTo(targetPoint(projectile.target)) < projectile.target.userData.radius * .62) {
             destroyTarget(projectile.target, 1400);
             projectile.life = 0;
           }
         }
         if (projectile.life <= 0) {
           scene.remove(projectile.mesh);
-          scene.remove(projectile.cable);
-          if (state.activeFiber === projectile) state.activeFiber = null;
+          if (state.activeMissile === projectile) state.activeMissile = null;
           state.bombs.splice(i, 1);
         }
       }
@@ -219,17 +198,35 @@ export function createGameplay({ THREE, scene, state, targets, drone, dronePos, 
     for (let i = state.particles.length - 1; i >= 0; i--) {
       const particle = state.particles[i];
       particle.life -= dt;
-      particle.mesh.position.addScaledVector(particle.velocity, dt);
-      particle.velocity.y -= 9 * dt;
-      particle.mesh.material.opacity = Math.max(0, particle.life);
-      particle.mesh.scale.setScalar(Math.max(.1, particle.life));
+      if (particle.explosionSprite) {
+        const progress = 1 - Math.max(0, particle.life) / particle.maxLife;
+        const frame = Math.min(63, Math.floor(progress * 64));
+        particle.texture.offset.set((frame % 8) / 8, 1 - (Math.floor(frame / 8) + 1) / 8);
+        particle.mesh.quaternion.copy(camera.quaternion);
+        particle.material.opacity = Math.min(1, Math.max(0, particle.life / .18));
+        particle.mesh.scale.setScalar(4.1 + Math.sin(progress * Math.PI) * 2.5);
+      } else if (particle.explosion) {
+        const progress = 1 - Math.max(0, particle.life) / particle.maxLife;
+        particle.mesh.scale.setScalar(particle.startSize + (particle.endSize - particle.startSize) * progress);
+        particle.mesh.material.opacity = Math.max(0, 1 - progress) * .85;
+      } else {
+        particle.mesh.position.addScaledVector(particle.velocity, dt);
+        particle.velocity.y -= 9 * dt;
+        particle.mesh.material.opacity = Math.max(0, particle.life);
+        particle.mesh.scale.setScalar(Math.max(.1, particle.life));
+      }
       if (particle.life <= 0) {
         scene.remove(particle.mesh);
+        if (particle.explosionSprite) {
+          particle.mesh.geometry.dispose();
+          particle.material.map.dispose();
+          particle.material.dispose();
+        }
         state.particles.splice(i, 1);
       }
     }
   }
 
 
-    return { liveTargets, targetPoint, droneLocalToWorld, acquireTarget, setFire, updateWeapons, updateParticles, checkKamikazeImpact, updateKamikazeRespawn };
+    return { liveTargets, targetPoint, droneLocalToWorld, acquireTarget, updateWeapons, updateParticles, checkDroneImpact, updateDroneRespawn };
 }

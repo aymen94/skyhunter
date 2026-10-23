@@ -1,0 +1,18 @@
+﻿3D aircraft model
+Source: amvlab/aircraft-models
+https://github.com/amvlab/aircraft-models
+
+File used: drone_nologo.glb (in this project as survey-drone.glb).
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Scorpion ground vehicle
+Title: Vehicles>Human>Ground>Scorpion
+Author: jameslucino117
+Source: https://sketchfab.com/3d-models/vehicleshumangroundscorpion-96da38d872cf4250b1830d7c0b63d6c0
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+The supplied GLB contains Default, Camo, and Hannibal variants. The asset was
+converted from legacy specular-glossiness materials to core glTF PBR materials;
+embedded base-color and normal maps are preserved.
